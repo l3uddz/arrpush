@@ -108,34 +108,54 @@ def decode(s):
 # MISC
 ############################################################
 
-def get_torrent_name(torrent_link):
+
+def get_torrent_content_from_url(torrent_url):
+    try:
+        # retrieve torrent url data
+        response = requests.get(torrent_url, timeout=30, verify=False)
+        if response.status_code == 200:
+            return response.content
+
+        log.error("Failed to retrieve torrent data from %s", torrent_url)
+        return None
+    except Exception:
+        log.exception("Exception retrieving torrent data from %s: ",
+                      torrent_url)
+        return None
+
+
+def get_torrent_content_from_file(torrent_path):
+    try:
+        # retrieve torrent file data
+        with open(torrent_path, 'rb') as torrent_file:
+            return torrent_file.read()
+
+        log.error("Failed to retrieve torrent data from %s", torrent_path)
+        return None
+    except Exception:
+        log.exception("Exception retrieving torrent data from %s: ",
+                      torrent_path)
+        return None
+
+
+def get_torrent_name(torrent_content):
     decoded_torrent_data = {}
 
     try:
-        # retrieve torrent file data
-        req = requests.get(torrent_link, timeout=30, verify=False)
-        if not req.status_code == 200:
-            log.error("Failed to retrieve torrent data from %s", torrent_link)
-            return None
-    except Exception:
-        log.exception("Exception retrieving torrent data from %s: ", torrent_link)
-        return None
-
-    try:
         # decode bencoded torrent file
-        decoded_torrent_data = decode(req.content)
+        decoded_torrent_data = decode(torrent_content)
         if b'info' not in decoded_torrent_data or b'name' not in decoded_torrent_data[b'info']:
-            log.error("Failed to parse torrent name from %s", torrent_link)
+            log.exception("Failed to parse torrent name: ")
             return None
     except Exception:
-        log.exception("Exception parsing torrent data from %s: ", torrent_link)
+        log.exception("Exception parsing torrent data: ")
 
     try:
         parsed_torrent_name = decoded_torrent_data[b'info'][b'name'].decode()
-        log.info("Retrieved torrent name from %s, name: %s", torrent_link, parsed_torrent_name)
+        log.info("Retrieved torrent name: %s", parsed_torrent_name)
         return parsed_torrent_name
     except Exception:
-        log.error("Exception parsing torrent name from %s: ", torrent_link)
+        log.error("Exception parsing torrent name: ")
     return None
 
 
@@ -212,9 +232,17 @@ if __name__ == "__main__":
         log.exception("Failed parsing arguments supplied %s: ", sys.argv)
         sys.exit(1)
 
-    # get torrent name from torrent file for specific trackers
     if torrent_tracker.lower() in parse_name_from_indexers:
-        tmp = get_torrent_name(torrent_url)
+        # get torrent name from torrent file for specific trackers
+        if len(sys.argv) == 8:
+            torrent_path = sys.argv[7]
+            torrent_content = get_torrent_content_from_file(torrent_path)
+            log.info("Retrieved Torrent Content from : %s", torrent_path)
+        else:
+            torrent_content = get_torrent_content_from_url(torrent_url)
+            log.info("Retrieved Torrent Content from : %s", torrent_url)
+
+        tmp = get_torrent_name(torrent_content) if torrent_content else None
         torrent_name = sys.argv[3] if not tmp else tmp
 
     # send to sonarr/radarr

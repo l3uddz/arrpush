@@ -54,6 +54,8 @@ docker exec -it rutorrent python3 -m pip install requests urllib3
 
   - **Run Arguments:** `"SONARR OR RADARR URL" "API_KEY" "$(TorrentName)" "$(TorrentUrl)" "$(TorrentSize)" "$(Tracker)"`
 
+  - **IF USING PTP or NEBULANCE**, Use the following **Run Arguments:** `"SONARR OR RADARR URL" "API_KEY" "$(TorrentName)" "$(TorrentUrl)" "$(TorrentSize)" "$(Tracker)" "$(TorrentPathName)"`
+
 ## Known Issues / Limitations
 
 - ARRpush does not have a way to get a releases name and size from PTP and Nebulance IRC announcements without having to download and extract the torrent file itself. This may lead to high .torrent download usage for these trackers. To work around this, use filters to reduce what ARRpush pushes to Sonarr/Radarr.
